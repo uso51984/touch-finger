@@ -1,0 +1,33 @@
+{
+  "name": "touch-finger",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uso51984/get-browser-info"
+  },
+  "keywords": [
+  ],
+  "scripts": {
+    "compile": "rc-tools run compile --babel-runtime",
+    "build": "rc-tools run build",
+    "start": "rc-tools run server"
+  },
+  "config": {
+    "name": "touchFinger",
+    "entry": {
+      "touchFinger": [
+        "./src/index.js"
+      ]
+    }
+  },
+  "author": "edmund chen",
+  "license": "MIT",
+  "devDependencies": {
+    "rc-tools": "^8.2.2"
+  },
+  "dependencies": {
+    "gulp-less": "^4.0.1"
+  }
+}
