@@ -1,36 +1,58 @@
 # touchFinger
 
-[demo](https://uso.gitee.io/get-browser-info/)
+[demo](https://uso.gitee.io/touch-finger/)
 
 ## 安装
 ```
-npm install get-browser-info
+npm install touch-finger
 ```
 
 ## 引入方式
 
 CommonJS 或者 es6引入方式
 ```js
-  import getBrowserInfo from 'get-browser-info';
+  import touchFinger from 'touch-finger';
 ```
 
 原始引入方式
 ```html
-    <script type="text/javascript" src="getBrowserInfo.js"></script>
+    <script type="text/javascript" src="touchFinger.js"></script>
 ```
-> getBrowserInfo.[min].js在dist目录
+> touchFinger.[min].js在dist目录
 
 ## 使用
 ```js
-    const clientInfo = getBrowserInfo() //返回一个信息对象
-```
-## clientInfo 说明
+const fingerInstance = new touchFinger(element, {
+  touchStart () { },
+  touchMove () { },
+  touchEnd:  function () { },
+  touchCancel () { },
+  multipointStart () { },
+  multipointEnd () { },
+  tap () { },
+  doubleTap () { },
+  longTap () { },
+  singleTap () { },
+  rotate (evt) {
+    console.log(evt.angle);
+  },
+  pinch (evt) {
+    console.log(evt.zoom);
+  },
+  pressMove (evt) {
+    console.log(evt.deltaX);
+    console.log(evt.deltaY);
+  },
+  swipe (evt) {
+    console.log("swipe" + evt.direction);
+  }
+});
 
-| ket | 说明 |
-| --- | --- |
-| 浏览器 |browser|
-| 版本 |browserVersion|
-| 内核 |engine|
-| 操作系统 |os|
-| 设备 |device|
-| 语言 |language|
+const onTap = function() {};
+
+fingerInstance.on('tap', onTap);
+fingerInstance.on('touchStart', function() {});
+fingerInstance.off('tap', onTap);
+
+fingerInstance.destroy();
+```
