@@ -56,3 +56,8 @@ fingerInstance.off('tap', onTap);
 
 fingerInstance.destroy();
 ```
+
+## 联系
+
+Email: usocjb@163.com
+weixin: chenjianbin519846538
