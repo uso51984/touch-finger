@@ -14,11 +14,11 @@ class HandlerAdmin {
       this.handlers = []
     };
 
-    for(let i = this.handlers.length; i >= 0; i--) {
-      if(this.handlers[i] === handler) {
-          this.handlers.splice(i, 1);
+    this.handlers.forEach((func, index) => {
+      if (func = handler) {
+        this.handlers.splice(index, 1);
       }
-    }
+    })
   }
 
   dispatch() {

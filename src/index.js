@@ -31,7 +31,7 @@ function getRotateAngle(v1, v2) {
   return angle * 180 / Math.PI;
 }
 
-class MobileFinger {
+class TouchFinger {
   constructor(el, option) {
     this.element = typeof el === 'string' ? document.querySelector(el) : el;
     this.element.addEventListener('touchstart', this.start, false);
@@ -178,7 +178,6 @@ class MobileFinger {
         e.deltaX = 0;
         e.deltaY = 0;
       }
-
       this.pressMove.dispatch(e, this.element);
     }
     this.touchMove.dispatch(e, this.element);
@@ -222,7 +221,7 @@ class MobileFinger {
 
       if (!this.isDoubleTap) {
         this.singleTapTimeout = setTimeout(() => {
-          this.singleTap.dispatch(e, self.element);
+          this.singleTap.dispatch(e, this.element);
         }, 250)
       }
     }
@@ -257,6 +256,18 @@ class MobileFinger {
 
   _swipeDirection(x1, x2, y1, y2) {
     return Math.abs(x1 - x2) >= Math.abs(y1 - y2) ? (x1 - x2 > 0 ? 'Left' : 'Right') : (y1 - y2 > 0 ? 'Up' : 'Down')
+  }
+
+  on = (evt, handler) => {
+    if(this[evt]) {
+        this[evt].add(handler);
+    }
+  }
+
+  off = (evt, handler) => {
+      if(this[evt]) {
+          this[evt].del(handler);
+      }
   }
 
   destroy() {
@@ -294,10 +305,40 @@ class MobileFinger {
     this.touchEnd.del();
     this.touchCancel.del();
 
-    this.preV = this.pinchStartLen = this.zoom = this.isDoubleTap = this.delta = this.last = this.now = this.tapTimeout = this.singleTapTimeout = this.longTapTimeout = this.swipeTimeout = this.x1 = this.x2 = this.y1 = this.y2 = this.preTapPosition = this.rotate = this.touchStart = this.multipointStart = this.multipointEnd = this.pinch = this.swipe = this.tap = this.doubleTap = this.longTap = this.singleTap = this.pressMove = this.touchMove = this.touchEnd = this.touchCancel = this.twoFingerPressMove = null;
+    this.preV = null;
+    this.pinchStartLen = null;
+    this.zoom = null;
+    this.isDoubleTap = null;
+    this.delta = null;
+    this.last = null;
+    this.now = null;
+    this.tapTimeout = null;
+    this.singleTapTimeout = null;
+    this.longTapTimeout = null;
+    this.swipeTimeout = null;
+    this.x1 = null;
+    this.x2 = null;
+    this.y1 = null;
+    this.y2 = null;
+    this.preTapPosition = null;
+    this.rotate = null;
+    this.touchStart = null;
+    this.multipointStart = null;
+    this.multipointEnd = null;
+    this.pinch = null;
+    this.swipe = null;
+    this.tap = null;
+    this.doubleTap = null;
+    this.longTap = null;
+    this.singleTap = null;
+    this.pressMove = null;
+    this.touchMove = null;
+    this.touchEnd = null;
+    this.touchCancel = null;
+    this.twoFingerPressMove = null;
 
     return null;
   }
 }
 
-export default MobileFinger;
+export default TouchFinger;
