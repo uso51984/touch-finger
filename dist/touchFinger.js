@@ -87,42 +87,13 @@ module.exports = __webpack_require__(1);
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__wrapFunc__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils__ = __webpack_require__(3);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 
 
-var noop = function noop() {};
-
-function getLen(v) {
-  return Math.sqrt(v.x * v.x + v.y * v.y);
-}
-
-function dot(v1, v2) {
-  return v1.x * v2.x + v1.y * v2.y;
-}
-
-function getAngle(v1, v2) {
-  var mr = getLen(v1) * getLen(v2);
-  if (mr === 0) return 0;
-  var r = dot(v1, v2) / mr;
-  if (r > 1) r = 1;
-  return Math.acos(r);
-}
-
-function cross(v1, v2) {
-  return v1.x * v2.y - v2.x * v1.y;
-}
-
-function getRotateAngle(v1, v2) {
-  var angle = getAngle(v1, v2);
-  if (cross(v1, v2) > 0) {
-    angle *= -1;
-  }
-
-  return angle * 180 / Math.PI;
-}
 
 var TouchFinger = function () {
   function TouchFinger(el, option) {
@@ -130,28 +101,28 @@ var TouchFinger = function () {
 
     _classCallCheck(this, TouchFinger);
 
-    this.start = function (e) {
+    this.handleTouchStart = function (e) {
       if (!e.touches) {
         return;
       }
-      _this.now = Date.now();
+      _this.touchStart.dispatch(e, _this.element);
+
+      _this.startTime = Date.now();
       _this.x1 = e.touches[0].pageX;
       _this.y1 = e.touches[0].pageY;
-      _this.delta = _this.now - (_this.last || _this.now);
-      _this.touchStart.dispatch(e, _this.element);
+      _this.delta = _this.startTime - (_this.lastTime || _this.startTime);
+      _this.lastTime = _this.startTime;
 
       if (_this.preTapPosition.x !== null) {
         _this.isDoubleTap = _this.delta > 0 && _this.delta <= 250 && Math.abs(_this.preTapPosition.x - _this.x1) < 30 && Math.abs(_this.preTapPosition.y - _this.y1) < 30;
-
         if (_this.isDoubleTap) {
           clearTimeout(_this.singleTapTimeout);
         }
       }
-
       _this.preTapPosition.x = _this.x1;
       _this.preTapPosition.y = _this.y1;
-      _this.last = _this.now;
       var preV = _this.preV;
+
       var len = e.touches.length;
       if (len > 1) {
         _this._cancelLongTap();
@@ -162,7 +133,8 @@ var TouchFinger = function () {
         };
         preV.x = v.x;
         preV.y = v.y;
-        _this.pinchStartLen = getLen(preV);
+
+        _this.pinchStartLen = Object(__WEBPACK_IMPORTED_MODULE_1__utils__["a" /* getLen */])(preV);
         _this.multipointStart.dispatch(e, _this.element);
       }
 
@@ -173,15 +145,18 @@ var TouchFinger = function () {
       }, 750);
     };
 
-    this.move = function (e) {
+    this.handleTouchMove = function (e) {
       if (!e.touches) {
         return;
       }
+      _this.touchMove.dispatch(e, _this.element);
+      _this._cancelLongTap();
+      _this.isDoubleTap = false;
+
       var preV = _this.preV;
       var len = e.touches.length;
       var currentX = e.touches[0].pageX;
       var currentY = e.touches[0].pageY;
-      _this.isDoubleTap = false;
 
       if (len > 1) {
         var sCurrentX = e.touches[1].pageX;
@@ -193,10 +168,10 @@ var TouchFinger = function () {
 
         if (preV.x !== null) {
           if (_this.pinchStartLen > 0) {
-            e.zoom = getLen(v) / _this.pinchStartLen;
+            e.zoom = Object(__WEBPACK_IMPORTED_MODULE_1__utils__["a" /* getLen */])(v) / _this.pinchStartLen;
             _this.pinch.dispatch(e, _this.element);
           }
-          e.angle = getRotateAngle(v, preV);
+          e.angle = Object(__WEBPACK_IMPORTED_MODULE_1__utils__["b" /* getRotateAngle */])(v, preV);
           _this.rotate.dispatch(e, _this.element);
         }
 
@@ -232,9 +207,7 @@ var TouchFinger = function () {
         }
         _this.pressMove.dispatch(e, _this.element);
       }
-      _this.touchMove.dispatch(e, _this.element);
 
-      _this._cancelLongTap();
       _this.x2 = currentX;
       _this.y2 = currentY;
 
@@ -243,7 +216,7 @@ var TouchFinger = function () {
       }
     };
 
-    this.end = function (e) {
+    this.handleTouchEnd = function (e) {
       if (!e.changedTouches) {
         return;
       }
@@ -278,6 +251,7 @@ var TouchFinger = function () {
       _this.touchEnd.dispatch(e, _this.element);
       _this.preV.x = 0;
       _this.preV.y = 0;
+
       _this.zoom = 1;
       _this.pinchStartLen = null;
       _this.x1 = _this.x2 = _this.y1 = _this.y2 = null;
@@ -291,7 +265,7 @@ var TouchFinger = function () {
       clearTimeout(_this.swipeTimeout);
     };
 
-    this.cancel = function () {
+    this.handleTouchCancel = function () {
       _this.cancelAll();
       _this.touchCancel.dispatch(e, _this.element);
     };
@@ -309,35 +283,35 @@ var TouchFinger = function () {
     };
 
     this.element = typeof el === 'string' ? document.querySelector(el) : el;
-    this.element.addEventListener('touchstart', this.start, false);
-    this.element.addEventListener("touchmove", this.move, false);
-    this.element.addEventListener("touchend", this.end, false);
-    this.element.addEventListener("touchcancel", this.cancel, false);
+    this.element.addEventListener('touchstart', this.handleTouchStart, false);
+    this.element.addEventListener("touchmove", this.handleTouchMove, false);
+    this.element.addEventListener("touchend", this.handleTouchEnd, false);
+    this.element.addEventListener("touchcancel", this.handleTouchCancel, false);
 
     this.preV = { x: null, y: null };
     this.pinchStartLen = null;
     this.zoom = 1;
     this.isDoubleTap = false;
 
-    this.rotate = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.rotate || noop);
-    this.touchStart = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchStart || noop);
-    this.multipointStart = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.multipointStart || noop);
-    this.multipointEnd = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.multipointEnd || noop);
-    this.pinch = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.pinch || noop);
-    this.swipe = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.swipe || noop);
-    this.tap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.tap || noop);
-    this.doubleTap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.doubleTap || noop);
-    this.longTap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.longTap || noop);
-    this.singleTap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.singleTap || noop);
-    this.pressMove = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.pressMove || noop);
-    this.twoFingerPressMove = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.twoFingerPressMove || noop);
-    this.touchMove = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchMove || noop);
-    this.touchEnd = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchEnd || noop);
-    this.touchCancel = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchCancel || noop);
+    this.rotate = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.rotate || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.touchStart = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchStart || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.multipointStart = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.multipointStart || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.multipointEnd = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.multipointEnd || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.pinch = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.pinch || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.swipe = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.swipe || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.tap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.tap || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.doubleTap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.doubleTap || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.longTap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.longTap || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.singleTap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.singleTap || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.pressMove = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.pressMove || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.twoFingerPressMove = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.twoFingerPressMove || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.touchMove = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchMove || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.touchEnd = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchEnd || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.touchCancel = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchCancel || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
 
     this.delta = null;
-    this.last = null;
-    this.now = null;
+    this.lastTime = null;
+    this.startTime = null;
     this.tapTimeout = null;
     this.singleTapTimeout = null;
     this.longTapTimeout = null;
@@ -403,8 +377,8 @@ var TouchFinger = function () {
       this.zoom = null;
       this.isDoubleTap = null;
       this.delta = null;
-      this.last = null;
-      this.now = null;
+      this.lastTime = null;
+      this.startTime = null;
       this.tapTimeout = null;
       this.singleTapTimeout = null;
       this.longTapTimeout = null;
@@ -500,6 +474,45 @@ var wrapFunc = function wrapFunc(el, handler) {
 };
 
 /* harmony default export */ __webpack_exports__["a"] = (wrapFunc);
+
+/***/ }),
+/* 3 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "c", function() { return noop; });
+/* harmony export (immutable) */ __webpack_exports__["a"] = getLen;
+/* harmony export (immutable) */ __webpack_exports__["b"] = getRotateAngle;
+var noop = function noop() {};
+
+function getLen(v) {
+  return Math.sqrt(v.x * v.x + v.y * v.y);
+}
+
+function dot(v1, v2) {
+  return v1.x * v2.x + v1.y * v2.y;
+}
+
+function getAngle(v1, v2) {
+  var mr = getLen(v1) * getLen(v2);
+  if (mr === 0) return 0;
+  var r = dot(v1, v2) / mr;
+  if (r > 1) r = 1;
+  return Math.acos(r);
+}
+
+function cross(v1, v2) {
+  return v1.x * v2.y - v2.x * v1.y;
+}
+
+function getRotateAngle(v1, v2) {
+  var angle = getAngle(v1, v2);
+  if (cross(v1, v2) > 0) {
+    angle *= -1;
+  }
+
+  return angle * 180 / Math.PI;
+}
 
 /***/ })
 /******/ ])["default"];

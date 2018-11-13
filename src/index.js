@@ -1,43 +1,13 @@
 import wrapFunc from './wrapFunc';
-
-const noop = () => { };
-
-function getLen(v) {
-  return Math.sqrt(v.x * v.x + v.y * v.y);
-}
-
-function dot(v1, v2) {
-  return v1.x * v2.x + v1.y * v2.y;
-}
-
-function getAngle(v1, v2) {
-  var mr = getLen(v1) * getLen(v2);
-  if (mr === 0) return 0;
-  var r = dot(v1, v2) / mr;
-  if (r > 1) r = 1;
-  return Math.acos(r);
-}
-
-function cross(v1, v2) {
-  return v1.x * v2.y - v2.x * v1.y;
-}
-
-function getRotateAngle(v1, v2) {
-  var angle = getAngle(v1, v2);
-  if (cross(v1, v2) > 0) {
-      angle *= -1;
-  }
-
-  return angle * 180 / Math.PI;
-}
+import { noop, getLen, getRotateAngle } from './utils'
 
 class TouchFinger {
   constructor(el, option) {
     this.element = typeof el === 'string' ? document.querySelector(el) : el;
-    this.element.addEventListener('touchstart', this.start, false);
-    this.element.addEventListener("touchmove", this.move, false);
-    this.element.addEventListener("touchend", this.end, false);
-    this.element.addEventListener("touchcancel", this.cancel, false);
+    this.element.addEventListener('touchstart', this.handleTouchStart, false);
+    this.element.addEventListener("touchmove", this.handleTouchMove, false);
+    this.element.addEventListener("touchend", this.handleTouchEnd, false);
+    this.element.addEventListener("touchcancel", this.handleTouchCancel, false);
 
 
     this.preV = { x: null, y: null };
@@ -63,8 +33,8 @@ class TouchFinger {
     this.touchCancel = wrapFunc(this.element, option.touchCancel || noop);
 
     this.delta = null;
-    this.last = null;
-    this.now = null;
+    this.lastTime = null;
+    this.startTime = null;
     this.tapTimeout = null;
     this.singleTapTimeout = null;
     this.longTapTimeout = null;
@@ -73,15 +43,17 @@ class TouchFinger {
     this.preTapPosition = { x: null, y: null };
   }
 
-  start = (e) => {
+  handleTouchStart = (e) => {
     if (!e.touches) {
       return;
     }
-    this.now = Date.now();
+    this.touchStart.dispatch(e, this.element);
+
+    this.startTime = Date.now();
     this.x1 = e.touches[0].pageX;
     this.y1 = e.touches[0].pageY;
-    this.delta = this.now - (this.last || this.now);
-    this.touchStart.dispatch(e, this.element);
+    this.delta = this.startTime - (this.lastTime || this.startTime);
+    this.lastTime = this.startTime;
 
     if (this.preTapPosition.x !== null) {
       this.isDoubleTap = (
@@ -90,16 +62,14 @@ class TouchFinger {
         Math.abs(this.preTapPosition.x - this.x1) < 30 &&
         Math.abs(this.preTapPosition.y - this.y1) < 30
       )
-
       if (this.isDoubleTap) {
         clearTimeout(this.singleTapTimeout);
       }
     }
-
     this.preTapPosition.x = this.x1;
     this.preTapPosition.y = this.y1;
-    this.last = this.now;
     const preV = this.preV;
+
     const len = e.touches.length;
     if (len > 1) {
       this._cancelLongTap();
@@ -110,6 +80,7 @@ class TouchFinger {
       }
       preV.x = v.x;
       preV.y = v.y;
+
       this.pinchStartLen = getLen(preV);
       this.multipointStart.dispatch(e, this.element);
     }
@@ -121,15 +92,18 @@ class TouchFinger {
     }, 750)
   }
 
-  move = (e) => {
+  handleTouchMove = (e) => {
     if (!e.touches) {
       return;
     }
+    this.touchMove.dispatch(e, this.element);
+    this._cancelLongTap();
+    this.isDoubleTap = false;
+
     const preV = this.preV;
     const len = e.touches.length;
     const currentX = e.touches[0].pageX;
     const currentY = e.touches[0].pageY;
-    this.isDoubleTap = false;
 
     if (len > 1) {
       const sCurrentX = e.touches[1].pageX;
@@ -180,9 +154,7 @@ class TouchFinger {
       }
       this.pressMove.dispatch(e, this.element);
     }
-    this.touchMove.dispatch(e, this.element);
 
-    this._cancelLongTap();
     this.x2 = currentX;
     this.y2 = currentY;
 
@@ -191,7 +163,7 @@ class TouchFinger {
     }
   }
 
-  end = (e) => {
+  handleTouchEnd = (e) => {
     if (!e.changedTouches) {
       return;
     }
@@ -228,6 +200,7 @@ class TouchFinger {
     this.touchEnd.dispatch(e, this.element);
     this.preV.x = 0;
     this.preV.y = 0;
+
     this.zoom = 1;
     this.pinchStartLen = null;
     this.x1 = this.x2 = this.y1 = this.y2 = null;
@@ -241,7 +214,7 @@ class TouchFinger {
     clearTimeout(this.swipeTimeout);
   }
 
-  cancel = () => {
+  handleTouchCancel = () => {
     this.cancelAll();
     this.touchCancel.dispatch(e, this.element);
   }
@@ -310,8 +283,8 @@ class TouchFinger {
     this.zoom = null;
     this.isDoubleTap = null;
     this.delta = null;
-    this.last = null;
-    this.now = null;
+    this.lastTime = null;
+    this.startTime = null;
     this.tapTimeout = null;
     this.singleTapTimeout = null;
     this.longTapTimeout = null;
