@@ -1,5 +1,13 @@
 import wrapFunc from './wrapFunc';
-import { noop, getLen, getRotateAngle } from './utils'
+import { noop, getLen, getRotateAngle, getMovingDirection } from './utils'
+
+
+const getTouchesCoords = (e) => {
+  return Array.prototype.slice.call(e.touches).map(item => ({
+    x: item.screenX,
+    y: item.screenY,
+  }));
+}
 
 class TouchFinger {
   constructor(el, option) {
@@ -9,6 +17,7 @@ class TouchFinger {
     this.element.addEventListener("touchend", this.handleTouchEnd, false);
     this.element.addEventListener("touchcancel", this.handleTouchCancel, false);
 
+    this.gestureState = {};
 
     this.preV = { x: null, y: null };
     this.pinchStartLen = null;
@@ -48,6 +57,8 @@ class TouchFinger {
       return;
     }
     this.touchStart.dispatch(e, this.element);
+    this.initGestureStatus(e);
+
 
     this.startTime = Date.now();
     this.x1 = e.touches[0].pageX;
@@ -97,6 +108,7 @@ class TouchFinger {
       return;
     }
     this.touchMove.dispatch(e, this.element);
+    this.updateGestureStatus(e);
     this._cancelLongTap();
     this.isDoubleTap = false;
 
@@ -217,6 +229,77 @@ class TouchFinger {
   handleTouchCancel = () => {
     this.cancelAll();
     this.touchCancel.dispatch(e, this.element);
+  }
+
+  setGestureState = (params) => {
+    if (!this.gestureState) {
+      this.gestureState = {}
+    }
+
+    if (this.gestureState.touches) {
+      this.gestureState.preTouches = this.gestureState.touches;
+    }
+    this.gestureState = {
+      ...this.gestureState,
+      ...params,
+    };
+  }
+
+  initGestureStatus = (e) => {
+    delete this.gestureState;
+
+    const startTouchesCoords = this.getTouchesCoords(e);
+    const startTime = Date.now();
+    // const startMutliFingerStatus = calcMutliFingerStatus(startTouches);
+    this.setGestureState({
+      startTime,
+      startTouchesCoords,
+      // startMutliFingerStatus,
+      /* copy for next time touch move cala convenient*/
+      time: startTime,
+      touchesCoords: startTouches,
+      // mutliFingerStatus: startMutliFingerStatus,
+      srcEvent: e,
+    });
+  }
+
+  updateGestureStatus(e) {
+    if (!e.touches || !e.touches.length) {
+      return;
+    }
+
+    const time = Date.now();
+
+    const { startTime, startTouchesCoords, pinch, rotate } = this.gesture;
+    const touchesCoords = this.getTouchesCoords(e);
+    const moveStatus = calcMoveStatus(startTouchesCoords, touchesCoords, time - startTime);
+    // let mutliFingerStatus;
+    if (pinch || rotate) {
+      mutliFingerStatus = calcMutliFingerStatus(touchesCoords);
+    }
+
+    this.setGestureState({
+      /* update status snapshot */
+      time,
+      touchesCoords,
+      // mutliFingerStatus,
+      /* update duration status */
+      moveStatus,
+
+    });
+  }
+
+  checkIfSingleTouchMove(e) {
+    const { touches } = e;
+    if (touches.length > 1) {
+      this.pan = false;
+      return;
+    }
+    const { touches, moveStatus, preTouches, touches } = this.gestureState;
+    if (moveStatus) {
+      const direction = getMovingDirection(preTouches[0], touches[0]);
+      const eventName = getDirectionEventName(direction);
+    }
   }
 
   _cancelLongTap() {
