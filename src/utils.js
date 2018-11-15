@@ -1,16 +1,10 @@
-export const noop = () => { };
+const DIRECTION_NONE = 1;     // 00001
+const DIRECTION_LEFT = 2;     // 00010
+const DIRECTION_RIGHT = 4;    // 00100
+const DIRECTION_UP = 8;       // 01000
+const DIRECTION_DOWN = 16;    // 10000
 
-export const DIRECTION_NONE = 1;     // 00001
-export const DIRECTION_LEFT = 2;     // 00010
-export const DIRECTION_RIGHT = 4;    // 00100
-export const DIRECTION_UP = 8;       // 01000
-export const DIRECTION_DOWN = 16;    // 10000
-
-export function getMovingDirection(point1, point2) {
-  const { x: x1, y: y1 } = point1;
-  const { x: x2, y: y2 } = point2;
-  const deltaX = x2 - x1;
-  const deltaY = y2 - y1;
+export function getMovingDirection(deltaX, deltaY) {
   if (deltaX === 0 && deltaY === 0) {
     return DIRECTION_NONE;
   }

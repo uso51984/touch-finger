@@ -1,4 +1,40 @@
-export var noop = function noop() {};
+var DIRECTION_NONE = 1; // 00001
+var DIRECTION_LEFT = 2; // 00010
+var DIRECTION_RIGHT = 4; // 00100
+var DIRECTION_UP = 8; // 01000
+var DIRECTION_DOWN = 16; // 10000
+
+export function getMovingDirection(deltaX, deltaY) {
+  if (deltaX === 0 && deltaY === 0) {
+    return DIRECTION_NONE;
+  }
+  if (Math.abs(deltaX) >= Math.abs(deltaY)) {
+    return deltaX < 0 ? DIRECTION_LEFT : DIRECTION_RIGHT;
+  }
+  return deltaY < 0 ? DIRECTION_UP : DIRECTION_DOWN;
+}
+
+export function getDirectionEventName(direction) {
+  var name = void 0;
+  switch (direction) {
+    case DIRECTION_NONE:
+      break;
+    case DIRECTION_LEFT:
+      name = 'left';
+      break;
+    case DIRECTION_RIGHT:
+      name = 'right';
+      break;
+    case DIRECTION_UP:
+      name = 'up';
+      break;
+    case DIRECTION_DOWN:
+      name = 'down';
+      break;
+    default:
+  }
+  return name;
+}
 
 export function getLen(v) {
   return Math.sqrt(v.x * v.x + v.y * v.y);

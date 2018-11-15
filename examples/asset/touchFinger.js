@@ -88,6 +88,8 @@ module.exports = __webpack_require__(1);
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__wrapFunc__ = __webpack_require__(2);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils__ = __webpack_require__(3);
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -95,17 +97,59 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 
+var getTouchesCoords = function getTouchesCoords(e) {
+  return Array.prototype.slice.call(e.touches).map(function (item) {
+    return {
+      x: item.screenX,
+      y: item.screenY
+    };
+  });
+};
+
 var TouchFinger = function () {
   function TouchFinger(el, option) {
     var _this = this;
 
     _classCallCheck(this, TouchFinger);
 
+    this.triggerEvent = function (name) {
+      for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+        args[_key - 1] = arguments[_key];
+      }
+
+      var callback = _this.option[name];
+      if (typeof callback === 'function') {
+        // always give user gesture object as first params first
+        callback.apply(undefined, [_this.getGestureState()].concat(args));
+      }
+    };
+
+    this.triggerCombineEvent = function (mainEventName, eventStatus) {
+      for (var _len2 = arguments.length, args = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
+        args[_key2 - 2] = arguments[_key2];
+      }
+
+      _this.triggerEvent.apply(_this, [mainEventName].concat(args));
+      _this.triggerSubEvent.apply(_this, [mainEventName, eventStatus].concat(args));
+    };
+
+    this.triggerSubEvent = function (mainEventName, eventStatus) {
+      for (var _len3 = arguments.length, args = Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
+        args[_key3 - 2] = arguments[_key3];
+      }
+
+      if (eventStatus) {
+        var subEventName = getEventName(mainEventName, eventStatus);
+        _this.triggerEvent.apply(_this, [subEventName].concat(args));
+      }
+    };
+
     this.handleTouchStart = function (e) {
       if (!e.touches) {
         return;
       }
       _this.touchStart.dispatch(e, _this.element);
+      _this.initGestureStatus(e);
 
       _this.startTime = Date.now();
       _this.x1 = e.touches[0].pageX;
@@ -150,6 +194,7 @@ var TouchFinger = function () {
         return;
       }
       _this.touchMove.dispatch(e, _this.element);
+      _this.updateGestureStatus(e);
       _this._cancelLongTap();
       _this.isDoubleTap = false;
 
@@ -171,7 +216,7 @@ var TouchFinger = function () {
             e.zoom = Object(__WEBPACK_IMPORTED_MODULE_1__utils__["a" /* getLen */])(v) / _this.pinchStartLen;
             _this.pinch.dispatch(e, _this.element);
           }
-          e.angle = Object(__WEBPACK_IMPORTED_MODULE_1__utils__["b" /* getRotateAngle */])(v, preV);
+          e.angle = Object(__WEBPACK_IMPORTED_MODULE_1__utils__["c" /* getRotateAngle */])(v, preV);
           _this.rotate.dispatch(e, _this.element);
         }
 
@@ -270,6 +315,35 @@ var TouchFinger = function () {
       _this.touchCancel.dispatch(e, _this.element);
     };
 
+    this.setGestureState = function (params) {
+      if (!_this.gestureState) {
+        _this.gestureState = {};
+      }
+
+      if (_this.gestureState.touches) {
+        _this.gestureState.preTouches = _this.gestureState.touches;
+      }
+      _this.gestureState = _extends({}, _this.gestureState, params);
+    };
+
+    this.initGestureStatus = function (e) {
+      delete _this.gestureState;
+
+      var startTouchesCoords = _this.getTouchesCoords(e);
+      var startTime = Date.now();
+      // const startMutliFingerStatus = calcMutliFingerStatus(startTouches);
+      _this.setGestureState({
+        startTime: startTime,
+        startTouchesCoords: startTouchesCoords,
+        // startMutliFingerStatus,
+        /* copy for next time touch move cala convenient*/
+        time: startTime,
+        touchesCoords: startTouches,
+        // mutliFingerStatus: startMutliFingerStatus,
+        srcEvent: e
+      });
+    };
+
     this.on = function (evt, handler) {
       if (_this[evt]) {
         _this[evt].add(handler);
@@ -288,26 +362,29 @@ var TouchFinger = function () {
     this.element.addEventListener("touchend", this.handleTouchEnd, false);
     this.element.addEventListener("touchcancel", this.handleTouchCancel, false);
 
+    this.option = option;
+    this.gestureState = {};
+
     this.preV = { x: null, y: null };
     this.pinchStartLen = null;
     this.zoom = 1;
     this.isDoubleTap = false;
 
-    this.rotate = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.rotate || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.touchStart = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchStart || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.multipointStart = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.multipointStart || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.multipointEnd = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.multipointEnd || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.pinch = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.pinch || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.swipe = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.swipe || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.tap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.tap || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.doubleTap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.doubleTap || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.longTap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.longTap || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.singleTap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.singleTap || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.pressMove = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.pressMove || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.twoFingerPressMove = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.twoFingerPressMove || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.touchMove = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchMove || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.touchEnd = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchEnd || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
-    this.touchCancel = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchCancel || __WEBPACK_IMPORTED_MODULE_1__utils__["c" /* noop */]);
+    this.rotate = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.rotate || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.touchStart = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchStart || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.multipointStart = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.multipointStart || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.multipointEnd = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.multipointEnd || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.pinch = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.pinch || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.swipe = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.swipe || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.tap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.tap || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.doubleTap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.doubleTap || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.longTap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.longTap || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.singleTap = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.singleTap || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.pressMove = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.pressMove || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.twoFingerPressMove = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.twoFingerPressMove || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.touchMove = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchMove || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.touchEnd = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchEnd || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
+    this.touchCancel = Object(__WEBPACK_IMPORTED_MODULE_0__wrapFunc__["a" /* default */])(this.element, option.touchCancel || __WEBPACK_IMPORTED_MODULE_1__utils__["d" /* noop */]);
 
     this.delta = null;
     this.lastTime = null;
@@ -321,6 +398,68 @@ var TouchFinger = function () {
   }
 
   _createClass(TouchFinger, [{
+    key: 'updateGestureStatus',
+    value: function updateGestureStatus(e) {
+      if (!e.touches || !e.touches.length) {
+        return;
+      }
+
+      var time = Date.now();
+
+      var _gesture = this.gesture,
+          startTime = _gesture.startTime,
+          startTouchesCoords = _gesture.startTouchesCoords,
+          pinch = _gesture.pinch,
+          rotate = _gesture.rotate;
+
+      var touchesCoords = this.getTouchesCoords(e);
+      var moveStatus = calcMoveStatus(startTouchesCoords, touchesCoords, time - startTime);
+      // let mutliFingerStatus;
+      if (pinch || rotate) {
+        mutliFingerStatus = calcMutliFingerStatus(touchesCoords);
+      }
+
+      this.setGestureState({
+        /* update status snapshot */
+        time: time,
+        touchesCoords: touchesCoords,
+        // mutliFingerStatus,
+        /* update duration status */
+        moveStatus: moveStatus
+
+      });
+    }
+  }, {
+    key: 'checkIfSingleTouchMove',
+    value: function checkIfSingleTouchMove(e) {
+      var touches = e.touches;
+
+      if (touches.length > 1) {
+        this.pan = false;
+        return;
+      }
+      var _gestureState = this.gestureState,
+          touchesCoords = _gestureState.touchesCoords,
+          moveStatus = _gestureState.moveStatus,
+          preTouchesCoords = _gestureState.preTouchesCoords;
+
+      if (moveStatus) {
+        var direction = Object(__WEBPACK_IMPORTED_MODULE_1__utils__["b" /* getMovingDirection */])(preTouchesCoords[0], touchesCoords[0]);
+        this.setGestureState({ direction: direction });
+        var eventName = getDirectionEventName(direction);
+
+        if (!pan) {
+          this.triggerCombineEvent('onPan', 'start');
+          this.setGestureState({
+            pan: true
+          });
+        } else {
+          this.triggerCombineEvent('onPan', eventName);
+          this.triggerSubEvent('onPan', 'move');
+        }
+      }
+    }
+  }, {
     key: '_cancelLongTap',
     value: function _cancelLongTap() {
       clearTimeout(this.longTapTimeout);
@@ -480,10 +619,67 @@ var wrapFunc = function wrapFunc(el, handler) {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "c", function() { return noop; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "d", function() { return noop; });
+/* unused harmony export DIRECTION_NONE */
+/* unused harmony export DIRECTION_LEFT */
+/* unused harmony export DIRECTION_RIGHT */
+/* unused harmony export DIRECTION_UP */
+/* unused harmony export DIRECTION_DOWN */
+/* harmony export (immutable) */ __webpack_exports__["b"] = getMovingDirection;
+/* unused harmony export getDirectionEventName */
+/* unused harmony export getEventName */
 /* harmony export (immutable) */ __webpack_exports__["a"] = getLen;
-/* harmony export (immutable) */ __webpack_exports__["b"] = getRotateAngle;
+/* harmony export (immutable) */ __webpack_exports__["c"] = getRotateAngle;
 var noop = function noop() {};
+
+var DIRECTION_NONE = 1; // 00001
+var DIRECTION_LEFT = 2; // 00010
+var DIRECTION_RIGHT = 4; // 00100
+var DIRECTION_UP = 8; // 01000
+var DIRECTION_DOWN = 16; // 10000
+
+function getMovingDirection(point1, point2) {
+  var x1 = point1.x,
+      y1 = point1.y;
+  var x2 = point2.x,
+      y2 = point2.y;
+
+  var deltaX = x2 - x1;
+  var deltaY = y2 - y1;
+  if (deltaX === 0 && deltaY === 0) {
+    return DIRECTION_NONE;
+  }
+  if (Math.abs(deltaX) >= Math.abs(deltaY)) {
+    return deltaX < 0 ? DIRECTION_LEFT : DIRECTION_RIGHT;
+  }
+  return deltaY < 0 ? DIRECTION_UP : DIRECTION_DOWN;
+}
+
+function getDirectionEventName(direction) {
+  var name = void 0;
+  switch (direction) {
+    case DIRECTION_NONE:
+      break;
+    case DIRECTION_LEFT:
+      name = 'left';
+      break;
+    case DIRECTION_RIGHT:
+      name = 'right';
+      break;
+    case DIRECTION_UP:
+      name = 'up';
+      break;
+    case DIRECTION_DOWN:
+      name = 'down';
+      break;
+    default:
+  }
+  return name;
+}
+
+function getEventName(prefix, status) {
+  return prefix + status[0].toUpperCase() + status.slice(1);
+}
 
 function getLen(v) {
   return Math.sqrt(v.x * v.x + v.y * v.y);
