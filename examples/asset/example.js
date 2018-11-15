@@ -7,7 +7,6 @@ new touchFinger(pinchImg, {
   },
 });
 
-
 var rotateImg = document.getElementById("rotateImg");
 Transform(rotateImg);
 new touchFinger(rotateImg, {
@@ -31,11 +30,12 @@ new touchFinger(pinchRotateImg, {
   }
 });
 
-
 var pressMoveImg = document.getElementById("pressMoveImg");
 Transform(pressMoveImg);
+let tmp = 0;
 new touchFinger(pressMoveImg, {
   pressMove: function (evt) {
+    console.log('evt', evt.deltaX)
     pressMoveImg.translateX += evt.deltaX;
     pressMoveImg.translateY += evt.deltaY;
     evt.preventDefault();
@@ -89,17 +89,15 @@ new touchFinger(swipeScroll, {
           activeNav(currentIndex);
         });
       }
-    }else if(evt.direction==="Right"){
+  }else if(evt.direction==="Right"){
     if(currentIndex>0) {
       currentIndex--;
       new To(swipeScroll, "translateX", -160 * currentIndex, 500, ease, function () {
         activeNav(currentIndex);
       });
-      }
     }
-    evt.preventDefault();
+    }
   }
-
 });
 
 var longTapBox = document.getElementById("longTapBox");

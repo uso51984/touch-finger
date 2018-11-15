@@ -13,6 +13,17 @@ class TouchFinger {
     this.element.addEventListener("touchcancel", this.handleTouchCancel, false);
     this.options = options;
     this.gestureStatus = {
+      delta: null,
+      last: null,
+      now: null,
+      tapTimeout: null,
+      singleTapTimeout: null,
+      longTapTimeout: null,
+      swipeTimeout: null,
+      x1: null,
+      x2: null,
+      y1: null,
+      y2: null,
       preV: { x: null, y: null },
       preTapPosition: { x: null, y: null }
     };
@@ -107,17 +118,17 @@ class TouchFinger {
       preV.x = v.x;
       preV.y = v.y;
 
-      if (this.gestureStatus.x2 !== null && this.gestureStatus.sx2 !== null) {
-        e.deltaX = (currentX - this.gestureStatus.x2 + sCurrentX - this.gestureStatus.sx2) / 2;
-        e.deltaY = (currentY - this.gestureStatus.y2 + sCurrentY - this.gestureStatus.sy2) / 2;
+      if (this.gestureStatus.x2 !== null && this.sx2 !== null) {
+        e.deltaX = (currentX - this.gestureStatus.x2 + sCurrentX - this.sx2) / 2;
+        e.deltaY = (currentY - this.gestureStatus.y2 + sCurrentY - this.sy2) / 2;
       } else {
         e.deltaX = 0;
         e.deltaY = 0;
       }
 
       this.triggerEvent('twoFingerPressMove', e, this.element);
-      this.gestureStatus.sx2 = sCurrentX;
-      this.gestureStatus.sy2 = sCurrentY;
+      this.sx2 = sCurrentX;
+      this.sy2 = sCurrentY;
     } else {
       if (this.gestureStatus.x2 !== null) {
         e.deltaX = currentX - this.gestureStatus.x2;
@@ -155,7 +166,7 @@ class TouchFinger {
     this._cancelLongTap();
     if (e.touches.length < 2) {
       this.triggerEvent('multipointEnd', e, this.element);
-      this.gestureStatus.sx2 = this.gestureStatus.sy2 = null;
+      this.sx2 = this.sy2 = null;
     }
 
     if ((this.gestureStatus.x2 && Math.abs(this.gestureStatus.x1 - this.gestureStatus.x2) > 30) ||

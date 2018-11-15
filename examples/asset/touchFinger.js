@@ -187,17 +187,17 @@ var TouchFinger = function () {
         preV.x = v.x;
         preV.y = v.y;
 
-        if (_this.gestureStatus.x2 !== null && _this.gestureStatus.sx2 !== null) {
-          e.deltaX = (currentX - _this.gestureStatus.x2 + sCurrentX - _this.gestureStatus.sx2) / 2;
-          e.deltaY = (currentY - _this.gestureStatus.y2 + sCurrentY - _this.gestureStatus.sy2) / 2;
+        if (_this.gestureStatus.x2 !== null && _this.sx2 !== null) {
+          e.deltaX = (currentX - _this.gestureStatus.x2 + sCurrentX - _this.sx2) / 2;
+          e.deltaY = (currentY - _this.gestureStatus.y2 + sCurrentY - _this.sy2) / 2;
         } else {
           e.deltaX = 0;
           e.deltaY = 0;
         }
 
         _this.triggerEvent('twoFingerPressMove', e, _this.element);
-        _this.gestureStatus.sx2 = sCurrentX;
-        _this.gestureStatus.sy2 = sCurrentY;
+        _this.sx2 = sCurrentX;
+        _this.sy2 = sCurrentY;
       } else {
         if (_this.gestureStatus.x2 !== null) {
           e.deltaX = currentX - _this.gestureStatus.x2;
@@ -235,7 +235,7 @@ var TouchFinger = function () {
       _this._cancelLongTap();
       if (e.touches.length < 2) {
         _this.triggerEvent('multipointEnd', e, _this.element);
-        _this.gestureStatus.sx2 = _this.gestureStatus.sy2 = null;
+        _this.sx2 = _this.sy2 = null;
       }
 
       if (_this.gestureStatus.x2 && Math.abs(_this.gestureStatus.x1 - _this.gestureStatus.x2) > 30 || _this.gestureStatus.y2 && Math.abs(_this.gestureStatus.y1 - _this.gestureStatus.y2) > 30) {
@@ -301,6 +301,17 @@ var TouchFinger = function () {
     this.element.addEventListener("touchcancel", this.handleTouchCancel, false);
     this.options = options;
     this.gestureStatus = {
+      delta: null,
+      last: null,
+      now: null,
+      tapTimeout: null,
+      singleTapTimeout: null,
+      longTapTimeout: null,
+      swipeTimeout: null,
+      x1: null,
+      x2: null,
+      y1: null,
+      y2: null,
       preV: { x: null, y: null },
       preTapPosition: { x: null, y: null }
     };
