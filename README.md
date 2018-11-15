@@ -40,6 +40,7 @@ const fingerInstance = new touchFinger(element, {
     console.log(evt.zoom);
   },
   pressMove (evt) {
+    console.log(evt.pressMoveDirection);
     console.log(evt.deltaX);
     console.log(evt.deltaY);
   },
