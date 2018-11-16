@@ -89,8 +89,7 @@ class TouchFinger {
     if (!e.touches) {
       return;
     }
-    this.triggerEvent('touchMove', e, this.element);
-    this._cancelLongTap();
+
     this.gestureStatus.isDoubleTap = false;
 
     const preV = this.gestureStatus.preV;
@@ -150,6 +149,9 @@ class TouchFinger {
       e.pressMoveDirection = getDirectionEventName(direction);
       this.triggerEvent('pressMove', e, this.element);
     }
+
+    this.triggerEvent('touchMove', e, this.element);
+    this._cancelLongTap();
 
     this.gestureStatus.x2 = currentX;
     this.gestureStatus.y2 = currentY;

@@ -158,8 +158,7 @@ var TouchFinger = function () {
       if (!e.touches) {
         return;
       }
-      _this.triggerEvent('touchMove', e, _this.element);
-      _this._cancelLongTap();
+
       _this.gestureStatus.isDoubleTap = false;
 
       var preV = _this.gestureStatus.preV;
@@ -219,6 +218,9 @@ var TouchFinger = function () {
         e.pressMoveDirection = Object(__WEBPACK_IMPORTED_MODULE_0__utils__["a" /* getDirectionEventName */])(direction);
         _this.triggerEvent('pressMove', e, _this.element);
       }
+
+      _this.triggerEvent('touchMove', e, _this.element);
+      _this._cancelLongTap();
 
       _this.gestureStatus.x2 = currentX;
       _this.gestureStatus.y2 = currentY;

@@ -35,7 +35,6 @@ Transform(pressMoveImg);
 let tmp = 0;
 new touchFinger(pressMoveImg, {
   pressMove: function (evt) {
-    console.log('evt', evt.deltaX)
     pressMoveImg.translateX += evt.deltaX;
     pressMoveImg.translateY += evt.deltaY;
     evt.preventDefault();
@@ -76,10 +75,8 @@ function activeNav(index){
   }
 }
 new touchFinger(swipeScroll, {
-  touchMove:function(evt) {
-    if (Math.abs(evt.deltaX) >= Math.abs(evt.deltaY)) {
-      evt.preventDefault();
-    }
+  touchMove: function (evt) {
+    evt.preventDefault();
   },
   swipe:function(evt){
     if(evt.direction==="Left"){
